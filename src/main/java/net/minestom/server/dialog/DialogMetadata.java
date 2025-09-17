@@ -6,7 +6,9 @@ import net.minestom.server.codec.StructCodec;
 import net.minestom.server.utils.validate.Check;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public record DialogMetadata(
         Component title,
@@ -32,4 +34,29 @@ public record DialogMetadata(
                 "Dialog may not have pause=true and afterAction=NONE");
     }
 
+    public List<Component> components() {
+        List<Component> components = new ArrayList<>();
+
+        components.add(title);
+        if (externalTitle != null) {
+            components.add(externalTitle);
+        }
+
+        components.addAll(body.stream().flatMap(it -> it.components().stream()).toList());
+        components.addAll(inputs.stream().flatMap(it -> it.components().stream()).toList());
+
+        return components;
+    }
+
+    public DialogMetadata copyWithOperator(UnaryOperator<Component> operator) {
+        return new DialogMetadata(
+                operator.apply(title),
+                externalTitle == null ? null : operator.apply(externalTitle),
+                canCloseWithEscape,
+                pause,
+                afterAction,
+                body.stream().map(it -> it.copyWithOperator(operator)).toList(),
+                inputs.stream().map(it -> it.copyWithOperator(operator)).toList()
+        );
+    }
 }

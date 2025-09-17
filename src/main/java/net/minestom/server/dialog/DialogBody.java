@@ -9,7 +9,10 @@ import net.minestom.server.registry.DynamicRegistry;
 import net.minestom.server.registry.Registry;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 public sealed interface DialogBody {
     Registry<StructCodec<? extends DialogBody>> REGISTRY = DynamicRegistry.fromMap(
@@ -38,6 +41,28 @@ public sealed interface DialogBody {
         public StructCodec<? extends DialogBody> codec() {
             return CODEC;
         }
+
+        @Override
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>();
+            if (description != null) {
+                components.add(description.contents);
+            }
+
+            return components;
+        }
+
+        @Override
+        public Item copyWithOperator(UnaryOperator<Component> operator) {
+            return new Item(
+                    itemStack,
+                    description == null ? null : description.copyWithOperator(operator),
+                    showDecoration,
+                    showTooltip,
+                    width,
+                    height
+            );
+        }
     }
 
     record PlainMessage(Component contents, int width) implements DialogBody {
@@ -55,8 +80,27 @@ public sealed interface DialogBody {
         public StructCodec<? extends DialogBody> codec() {
             return CODEC;
         }
+
+        @Override
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>();
+            components.add(contents);
+
+            return components;
+        }
+
+        @Override
+        public PlainMessage copyWithOperator(UnaryOperator<Component> operator) {
+            return new PlainMessage(
+                    operator.apply(contents),
+                    width
+            );
+        }
     }
 
     StructCodec<? extends DialogBody> codec();
 
+    List<Component> components();
+
+    DialogBody copyWithOperator(UnaryOperator<Component> operator);
 }

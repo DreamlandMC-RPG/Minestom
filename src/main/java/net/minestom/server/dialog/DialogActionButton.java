@@ -5,6 +5,8 @@ import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.UnaryOperator;
+
 public record DialogActionButton(
         Component label,
         @Nullable Component tooltip,
@@ -18,4 +20,13 @@ public record DialogActionButton(
             "width", Codec.INT.optional(DEFAULT_WIDTH), DialogActionButton::width,
             "action", DialogAction.CODEC.optional(), DialogActionButton::action,
             DialogActionButton::new);
+
+    public DialogActionButton copyWithOperator(UnaryOperator<Component> operator) {
+        return new DialogActionButton(
+                operator.apply(label),
+                tooltip == null ? null : operator.apply(tooltip),
+                width,
+                action
+        );
+    }
 }

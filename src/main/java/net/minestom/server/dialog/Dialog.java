@@ -6,12 +6,15 @@ import net.kyori.adventure.text.Component;
 import net.minestom.server.codec.Codec;
 import net.minestom.server.codec.StructCodec;
 import net.minestom.server.network.NetworkBuffer;
+import net.minestom.server.network.packet.server.ServerPacket;
 import net.minestom.server.registry.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 public sealed interface Dialog extends Holder.Direct<Dialog>, DialogLike {
     Registry<StructCodec<? extends Dialog>> REGISTRY = DynamicRegistry.fromMap(
@@ -69,6 +72,7 @@ public sealed interface Dialog extends Holder.Direct<Dialog>, DialogLike {
         );
     }
 
+
     record Notice(DialogMetadata metadata, DialogActionButton action) implements Dialog {
         public static final DialogActionButton DEFAULT_ACTION = new DialogActionButton(Component.translatable("gui.ok"), null, 150, null);
         public static final StructCodec<Notice> CODEC = StructCodec.struct(
@@ -79,6 +83,20 @@ public sealed interface Dialog extends Holder.Direct<Dialog>, DialogLike {
         @Override
         public StructCodec<? extends Dialog> codec() {
             return CODEC;
+        }
+
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>(metadata.components());
+            components.add(action.label());
+            return components;
+        }
+
+        @Override
+        public Notice copyWithOperator(UnaryOperator<Component> operator) {
+            return new Notice(
+                    metadata.copyWithOperator(operator),
+                    action.copyWithOperator(operator)
+            );
         }
     }
 
@@ -97,6 +115,23 @@ public sealed interface Dialog extends Holder.Direct<Dialog>, DialogLike {
         @Override
         public StructCodec<? extends Dialog> codec() {
             return CODEC;
+        }
+
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>(metadata.components());
+            if (exitAction != null) {
+                components.add(exitAction.label());
+            }
+            return components;
+        }
+
+        @Override
+        public ServerLinks copyWithOperator(UnaryOperator<Component> operator) {
+            return new ServerLinks(
+                    metadata.copyWithOperator(operator),
+                    exitAction == null ? null : exitAction.copyWithOperator(operator),
+                    columns, buttonWidth
+            );
         }
     }
 
@@ -118,6 +153,24 @@ public sealed interface Dialog extends Holder.Direct<Dialog>, DialogLike {
         public StructCodec<? extends Dialog> codec() {
             return CODEC;
         }
+
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>(metadata.components());
+            if (exitAction != null) {
+                components.add(exitAction.label());
+            }
+            return components;
+        }
+
+        @Override
+        public DialogList copyWithOperator(UnaryOperator<Component> operator) {
+            return new DialogList(
+                    metadata.copyWithOperator(operator),
+                    dialogs,
+                    exitAction == null ? null : exitAction.copyWithOperator(operator),
+                    columns, buttonWidth
+            );
+        }
     }
 
     record MultiAction(
@@ -137,6 +190,26 @@ public sealed interface Dialog extends Holder.Direct<Dialog>, DialogLike {
         public StructCodec<? extends Dialog> codec() {
             return CODEC;
         }
+
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>(metadata.components());
+            components.addAll(actions.stream().map(DialogActionButton::label).toList());
+            if (exitAction != null) {
+                components.add(exitAction.label());
+            }
+
+            return components;
+        }
+
+        @Override
+        public MultiAction copyWithOperator(UnaryOperator<Component> operator) {
+            return new MultiAction(
+                    metadata.copyWithOperator(operator),
+                    actions.stream().map(it -> it.copyWithOperator(operator)).toList(),
+                    exitAction == null ? null : exitAction.copyWithOperator(operator),
+                    columns
+            );
+        }
     }
 
     record Confirmation(
@@ -154,10 +227,29 @@ public sealed interface Dialog extends Holder.Direct<Dialog>, DialogLike {
         public StructCodec<? extends Dialog> codec() {
             return CODEC;
         }
+
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>(metadata.components());
+            components.add(yesButton.label());
+            components.add(noButton.label());
+
+            return components;
+        }
+
+        public Confirmation copyWithOperator(UnaryOperator<Component> operator) {
+            return new Confirmation(
+                    metadata.copyWithOperator(operator),
+                    yesButton.copyWithOperator(operator),
+                    noButton.copyWithOperator(operator)
+            );
+        }
     }
 
     DialogMetadata metadata();
 
     StructCodec<? extends Dialog> codec();
 
+    List<Component> components();
+
+    Dialog copyWithOperator(UnaryOperator<Component> operator);
 }

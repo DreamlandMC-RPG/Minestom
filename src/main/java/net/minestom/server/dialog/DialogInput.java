@@ -10,8 +10,11 @@ import net.minestom.server.utils.validate.Check;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.UnaryOperator;
 
 public sealed interface DialogInput {
     int DEFAULT_WIDTH = 200;
@@ -29,6 +32,7 @@ public sealed interface DialogInput {
             if (!Character.isLetterOrDigit(c) && c != '_')
                 throw new IllegalArgumentException(MessageFormat.format("Invalid input key: {0}. Must match [a-zA-Z0-9_]+", key));
     }
+
 
     record Boolean(
             String key,
@@ -53,6 +57,25 @@ public sealed interface DialogInput {
         @Override
         public StructCodec<? extends DialogInput> codec() {
             return CODEC;
+        }
+
+        @Override
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>();
+            components.add(label());
+
+            return components;
+        }
+
+        @Override
+        public Boolean copyWithOperator(UnaryOperator<Component> operator) {
+            return new Boolean(
+                    key,
+                    operator.apply(label),
+                    initial,
+                    onTrue,
+                    onFalse
+            );
         }
     }
 
@@ -83,6 +106,27 @@ public sealed interface DialogInput {
         @Override
         public StructCodec<? extends DialogInput> codec() {
             return CODEC;
+        }
+
+        @Override
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>();
+            components.add(label());
+
+            return components;
+        }
+
+        @Override
+        public NumberRange copyWithOperator(UnaryOperator<Component> operator) {
+            return new NumberRange(
+                    key, width,
+                    operator.apply(label),
+                    labelFormat,
+                    start,
+                    end,
+                    initial,
+                    step
+            );
         }
     }
 
@@ -121,6 +165,31 @@ public sealed interface DialogInput {
                     "display", Codec.COMPONENT.optional(), Option::display,
                     "initial", Codec.BOOLEAN.optional(false), Option::initial,
                     Option::new);
+
+            public Option copyWithOperator(UnaryOperator<Component> operator) {
+                return new Option(id, display == null ? null : operator.apply(display), initial);
+            }
+        }
+
+        @Override
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>();
+            components.add(label());
+            components.addAll(options.stream().map(it -> it.display)
+                    .filter(Objects::nonNull).toList());
+
+            return components;
+        }
+
+        @Override
+        public SingleOption copyWithOperator(UnaryOperator<Component> operator) {
+            return new SingleOption(
+                    key,
+                    width,
+                    options.stream().map(it -> it.copyWithOperator(operator)).toList(),
+                    operator.apply(label),
+                    labelVisible
+            );
         }
     }
 
@@ -157,8 +226,32 @@ public sealed interface DialogInput {
                     "height", Codec.INT.optional(), Multiline::height,
                     Multiline::new);
         }
+
+        @Override
+        public List<Component> components() {
+            List<Component> components = new ArrayList<>();
+            components.add(label());
+
+            return components;
+        }
+
+        @Override
+        public DialogInput copyWithOperator(UnaryOperator<Component> operator) {
+            return new Text(
+                    key,
+                    width,
+                    operator.apply(label),
+                    labelVisible,
+                    initial,
+                    maxLength,
+                    multiline
+            );
+        }
     }
 
     StructCodec<? extends DialogInput> codec();
 
+    List<Component> components();
+
+    DialogInput copyWithOperator(UnaryOperator<Component> operator);
 }
