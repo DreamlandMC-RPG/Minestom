@@ -35,7 +35,7 @@ final class Serializers {
             component -> Codec.COMPONENT.encode(new RegistryTranscoder<>(Transcoder.NBT, MinecraftServer.process()), component).orElse(null)
     );
 
-    static final Entry<Object, ByteBinaryTag> EMPTY = new Entry<>(BinaryTagTypes.BYTE, _ -> null, _ -> null);
+    static final Entry<Object, ByteBinaryTag> EMPTY = new Entry<>(BinaryTagTypes.BYTE, ignored -> null, ignored2 -> null);
 
     static <T> Entry<T, CompoundBinaryTag> fromTagSerializer(TagSerializer<T> serializer) {
         return new Serializers.Entry<>(BinaryTagTypes.COMPOUND,

@@ -23,6 +23,7 @@ public final class PlayerInputEvent implements PlayerInstanceEvent {
     private final boolean oldSprint;
 
     public PlayerInputEvent(Player player, boolean oldForward, boolean oldBackward, boolean oldLeft, boolean oldRight, boolean oldJump, boolean oldShift, boolean oldSprint) {
+        super();
         this.player = player;
         this.oldForward = oldForward;
         this.oldBackward = oldBackward;
@@ -31,7 +32,6 @@ public final class PlayerInputEvent implements PlayerInstanceEvent {
         this.oldJump = oldJump;
         this.oldShift = oldShift;
         this.oldSprint = oldSprint;
-        super();
     }
 
     @Override
