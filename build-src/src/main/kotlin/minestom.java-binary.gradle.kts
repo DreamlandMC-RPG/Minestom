@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.shadow)
 }
 
-val javaVersion = System.getenv("JAVA_VERSION") ?: "25"
+val javaVersion = System.getenv("JAVA_VERSION") ?: "21"
 
 group = "net.minestom"
 
